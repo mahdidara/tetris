@@ -5,7 +5,7 @@ from random import choice
 class Bord:
     def __init__(self , root):
         self.root = root
-        self.canvas = tk.Canvas(self.root , height=800 , width=480 , bg='black')
+        self.canvas = tk.Canvas(self.root , height=height , width=width-120 , bg='black')
         self.canvas.pack(side='right')
         self.timer_label = tk.Label(self.root, text="Time: 0s", fg="white", bg="black", font=("Arial", 14))
         self.timer_label.pack(pady=10)
@@ -35,7 +35,7 @@ class Bord:
                 self.root.after_cancel(self.timer_id)
                 self.root.after_cancel(self.run_id)
                 self.draw()
-                self.canvas.create_text(240, 400, text="Game Over", fill="red", font=("Arial", 42, "bold"))
+                self.canvas.create_text(width*0.4, height/2, text="Game Over", fill="red", font=("Arial", 42, "bold"))
                 self.restart_button = tk.Button(self.root, text="Restart", bg='green' , font=("Arial", 14, "bold"), command=run_game)
                 self.restart_button.pack(pady=20)
                 return
@@ -89,14 +89,15 @@ class Bord:
     def is_line(self):
         lines_to_clear = []
         y_positions = [block.y for shape in self.shapes for block in shape.blocks]
-        for y in range(760, -1, -40):
+        for y in range(height-block_size, -1, -block_size):
             if y_positions.count(y) == 12:
                 lines_to_clear.append(y)
 
         if not lines_to_clear:
             return False
 
-        for y in lines_to_clear:
+        lines_to_clear.sort()
+        for y in reversed(lines_to_clear):
             for shape in self.shapes:
                 shape.blocks = [block for block in shape.blocks if block.y != y]
 
@@ -104,8 +105,8 @@ class Bord:
             for shape in self.shapes:
                 for block in shape.blocks:
                     if block.y < y:
-                        block.y += 40
-        self.score += len(lines_to_clear)
+                        block.y += block.size
+        self.score += len(lines_to_clear) * 10
         self.score_label.config(text=f'Score: {self.score}')
 
         return True
@@ -121,7 +122,7 @@ class Block:
         self.shape = shape
         self.x = x
         self.y = y
-        self.size = 40
+        self.size = block_size
 
 class Shape:
     def __init__(self , bord , color):
@@ -138,7 +139,7 @@ class Shape:
                     if self_block.x == other_block.x and self_block.y == other_block.y - other_block.size:
                         return False
         for block in self.blocks:
-            if block.y == 760:
+            if block.y == height-block_size:
                 return False
         return True
     def can_move(self , r_l):
@@ -151,7 +152,7 @@ class Shape:
                         return False
             if r_l == 'Left' and self_block.x == 0:
                 return False
-            elif r_l == 'Right' and self_block.x == 440:
+            elif r_l == 'Right' and self_block.x == width-block_size-120:
                 return False        
         return True
 
@@ -165,7 +166,7 @@ class Shape:
             new_x = center.x - relative_y 
             new_y = center.y + relative_x 
 
-            if new_x < 0 or new_x >= 480 or new_y >= 800:
+            if new_x < 0 or new_x >= width-120 or new_y >= height:
                 return
             
             for shape in self.bord.shapes:
@@ -180,43 +181,46 @@ class Shape:
             block.x, block.y = new_positions[i]
 
 class OShape(Shape):
-    def __init__(self, bord , color = 'red'):
+    def __init__(self, bord , color = 'gray'):
         super().__init__(bord , color)
-        self.blocks = [Block(200 , -80 , self) , Block(240 , -80 , self) , Block(200 , -40 , self) , Block(240 , -40 , self)]
+        self.blocks = [Block(5*block_size , -2*block_size , self) , Block(6*block_size , -2*block_size , self) , Block(5*block_size , -block_size , self) , Block(6*block_size , -block_size , self)]
         
 class SShape(Shape):
     def __init__(self, bord , color = 'blue'):
         super().__init__(bord , color)
-        self.blocks = [Block(240 , -80 , self) , Block(200 , -80 , self) , Block(160 , -40 , self) , Block(200 , -40 , self)]
+        self.blocks = [Block(6*block_size , -2*block_size , self) , Block(5*block_size , -2*block_size , self) , Block(4*block_size , -block_size , self) , Block(5*block_size , -block_size , self)]
 
 class LShape(Shape):
     def __init__(self, bord , color = 'green'):
         super().__init__(bord , color)
-        self.blocks = [Block(160 , -40 , self) , Block(200 , -40 , self) , Block(160 , -80 , self) , Block(160 , -120 , self)]
+        self.blocks = [Block(4*block_size , -block_size , self) , Block(5*block_size , -block_size , self) , Block(4*block_size , -2*block_size , self) , Block(4*block_size , -3*block_size , self)]
 
 class ZShape(Shape):
     def __init__(self, bord, color='yellow'):
         super().__init__(bord, color)
-        self.blocks = [Block(240, -80, self) , Block(200, -80, self) , Block(240, -40, self) , Block(280, -40, self) ]
+        self.blocks = [Block(6*block_size, -2*block_size, self) , Block(5*block_size, -2*block_size, self) , Block(6*block_size, -block_size, self) , Block(7*block_size, -block_size, self) ]
 
 class TShape(Shape):
     def __init__(self, bord, color='purple'):
         super().__init__(bord, color)
-        self.blocks = [Block(200, -40, self),Block(200, -80, self) , Block(160, -40, self) , Block(240, -40, self)]
+        self.blocks = [Block(5*block_size, -block_size, self),Block(5*block_size, -2*block_size, self) , Block(4*block_size, -block_size, self) , Block(6*block_size, -block_size, self)]
 
 class IShape(Shape):
     def __init__(self, bord, color='cyan'):
         super().__init__(bord, color)
-        self.blocks = [Block(200, -80, self) , Block(200, -40, self) , Block(200, -120, self) , Block(200, -160, self)]
+        self.blocks = [Block(5*block_size, -2*block_size, self) , Block(5*block_size, -block_size, self) , Block(5*block_size, -3*block_size, self) , Block(5*block_size, -4*block_size, self)]
 
 class JShape(Shape):
     def __init__(self, bord, color='orange'):
         super().__init__(bord, color)
-        self.blocks = [Block(200, -40, self) , Block(160, -40, self) , Block(200, -80, self) , Block(200, -120, self)]
+        self.blocks = [Block(5*block_size, -block_size, self) , Block(4*block_size, -block_size, self) , Block(5*block_size, -2*block_size, self) , Block(5*block_size, -3*block_size, self)]
 
 root = tk.Tk()
 root.title('Tetris')
-root.geometry('600x800')
+block_size = root.winfo_screenheight() // 30
+height = block_size * 20
+width = int(120 + (12 * block_size))
+root.geometry(f'{width}x{height}')
 root.resizable(False , False)
 def run_game():
     for widget in root.winfo_children():
